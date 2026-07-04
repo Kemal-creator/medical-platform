@@ -12,9 +12,16 @@ import java.util.List;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final AppointmentEventPublisher eventPublisher;
 
     public Schedule save(Schedule schedule) {
-        return scheduleRepository.save(schedule);
+        Schedule saved = scheduleRepository.save(schedule);
+        eventPublisher.publishAppointmentCreated(
+                null,
+                saved.getDoctor().getId(),
+                saved.getTimeSlot().toString()
+        );
+        return saved;
     }
 
     public List<Schedule> findAll() {
