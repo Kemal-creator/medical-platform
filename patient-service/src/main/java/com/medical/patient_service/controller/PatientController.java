@@ -1,7 +1,9 @@
 package com.medical.patient_service.controller;
 
+import com.medical.patient_service.dto.PatientRequest;
 import com.medical.patient_service.entity.Patient;
 import com.medical.patient_service.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +17,13 @@ public class PatientController {
     private final PatientService patientService;
 
     @PostMapping
-    public Patient create(@RequestBody Patient patient) {
+    public Patient create(@RequestBody @Valid PatientRequest request) {
+        Patient patient = new Patient();
+        patient.setFirstName(request.getFirstName());
+        patient.setLastName(request.getLastName());
+        patient.setEmail(request.getEmail());
+        patient.setDateOfBirth(request.getDateOfBirth());
+        patient.setPhone(request.getPhone());
         return patientService.save(patient);
     }
 
