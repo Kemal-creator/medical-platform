@@ -13,11 +13,14 @@ import java.util.List;
 public class IntegrationService {
 
     private final LabRequestRepository labRequestRepository;
+    private final LabRequestEventPublisher eventPublisher;
 
     public LabRequest sendRequest(LabRequest labRequest) {
         labRequest.setStatus("PENDING");
         labRequest.setCreatedAt(LocalDateTime.now());
-        return labRequestRepository.save(labRequest);
+        LabRequest saved = labRequestRepository.save(labRequest);
+        eventPublisher.publishLabRequestCreated(saved.getPatientId(), saved.getTestType());
+        return saved;
     }
 
     public List<LabRequest> findAll() {
