@@ -23,7 +23,7 @@ public class ReminderScheduler {
     private final OutboxEventRepository outboxEventRepository;
 
     @Transactional
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 3600000)
     public void scheduleReminders() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         List<Schedule> schedules = scheduleRepository.findByDate(tomorrow);
