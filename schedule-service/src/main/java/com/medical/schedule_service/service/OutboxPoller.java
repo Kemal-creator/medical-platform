@@ -24,10 +24,18 @@ public class OutboxPoller {
     public void pollAndPublish() {
         List<OutboxEvent> pendingEvents = outboxEventRepository.findByStatus("PENDING");
         for (OutboxEvent event : pendingEvents) {
-            kafkaTemplate.send("appointment-created", event.getPayload());
+            String topic = resolveTopic(event.getEventType());
+            kafkaTemplate.send(topic, event.getPayload());
             event.setStatus("SENT");
             outboxEventRepository.save(event);
-            log.info("Published outbox event id={} type={}", event.getId(), event.getEventType());
+            log.info("Published outbox event id={} type={} topic={}", event.getId(), event.getEventType(), topic);
         }
+    }
+
+    private String resolveTopic(String eventType) {
+        return switch (eventType) {
+            case "APPOINTMENT_REMINDER_24H" -> "appointment-reminder";
+            default -> "appointment-created";
+        };
     }
 }
