@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Slf4j
@@ -24,18 +25,42 @@ public class ReminderScheduler {
 
     @Transactional
     @Scheduled(fixedDelay = 3600000)
-    public void scheduleReminders() {
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
-        List<Schedule> schedules = scheduleRepository.findByDate(tomorrow);
+    public void remindIn24Hours() {
+        LocalDate target = LocalDate.now().plusDays(1);
+        List<Schedule> schedules = scheduleRepository.findByDate(target);
+        int created = createReminders(schedules, "APPOINTMENT_REMINDER_24H");
+        log.info("24h reminders: checked={}, created={}, date={}", schedules.size(), created, target);
+    }
 
+    @Transactional
+    @Scheduled(fixedDelay = 3600000)
+    public void remindIn72Hours() {
+        LocalDate target = LocalDate.now().plusDays(3);
+        List<Schedule> schedules = scheduleRepository.findByDate(target);
+        int created = createReminders(schedules, "APPOINTMENT_REMINDER_72H");
+        log.info("72h reminders: checked={}, created={}, date={}", schedules.size(), created, target);
+    }
+
+    @Transactional
+    @Scheduled(fixedDelay = 300000)
+    public void remindIn2Hours() {
+        LocalDate today = LocalDate.now();
+        LocalTime from = LocalTime.now().plusHours(2);
+        LocalTime to = LocalTime.now().plusHours(2).plusMinutes(30);
+        List<Schedule> schedules = scheduleRepository.findByDateAndTimeSlotBetween(today, from, to);
+        int created = createReminders(schedules, "APPOINTMENT_REMINDER_2H");
+        log.info("2h reminders: checked={}, created={}, window={}-{}", schedules.size(), created, from, to);
+    }
+
+    private int createReminders(List<Schedule> schedules, String eventType) {
         int created = 0;
         for (Schedule schedule : schedules) {
             String scheduleIdMarker = "\"scheduleId\":" + schedule.getId();
             boolean alreadyExists = outboxEventRepository
-                    .existsByEventTypeAndPayloadContaining("APPOINTMENT_REMINDER_24H", scheduleIdMarker);
+                    .existsByEventTypeAndPayloadContaining(eventType, scheduleIdMarker);
 
             if (alreadyExists) {
-                log.debug("Reminder already exists for scheduleId={}, skipping", schedule.getId());
+                log.debug("Reminder {} already exists for scheduleId={}, skipping", eventType, schedule.getId());
                 continue;
             }
 
@@ -48,14 +73,13 @@ public class ReminderScheduler {
             );
 
             OutboxEvent event = new OutboxEvent();
-            event.setEventType("APPOINTMENT_REMINDER_24H");
+            event.setEventType(eventType);
             event.setPayload(payload);
             event.setStatus("PENDING");
             event.setCreatedAt(LocalDateTime.now());
             outboxEventRepository.save(event);
             created++;
         }
-
-        log.info("Checked {} schedules for {}, created {} reminders", schedules.size(), tomorrow, created);
+        return created;
     }
 }
