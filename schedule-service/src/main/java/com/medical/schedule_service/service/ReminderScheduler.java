@@ -28,9 +28,20 @@ public class ReminderScheduler {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         List<Schedule> schedules = scheduleRepository.findByDate(tomorrow);
 
+        int created = 0;
         for (Schedule schedule : schedules) {
+            String scheduleIdMarker = "\"scheduleId\":" + schedule.getId();
+            boolean alreadyExists = outboxEventRepository
+                    .existsByEventTypeAndPayloadContaining("APPOINTMENT_REMINDER_24H", scheduleIdMarker);
+
+            if (alreadyExists) {
+                log.debug("Reminder already exists for scheduleId={}, skipping", schedule.getId());
+                continue;
+            }
+
             String payload = String.format(
-                    "{\"doctorId\":%d,\"date\":\"%s\",\"timeSlot\":\"%s\"}",
+                    "{\"scheduleId\":%d,\"doctorId\":%d,\"date\":\"%s\",\"timeSlot\":\"%s\"}",
+                    schedule.getId(),
                     schedule.getDoctor().getId(),
                     schedule.getDate(),
                     schedule.getTimeSlot()
@@ -42,8 +53,9 @@ public class ReminderScheduler {
             event.setStatus("PENDING");
             event.setCreatedAt(LocalDateTime.now());
             outboxEventRepository.save(event);
+            created++;
         }
 
-        log.info("Scheduled {} reminders for {}", schedules.size(), tomorrow);
+        log.info("Checked {} schedules for {}, created {} reminders", schedules.size(), tomorrow, created);
     }
 }

@@ -8,4 +8,6 @@ import java.util.List;
 public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> {
 
     List<OutboxEvent> findByStatus(String status);
+
+    boolean existsByEventTypeAndPayloadContaining(String eventType, String text);
 }
