@@ -37,23 +37,17 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<Map<String, Object>> validate(@RequestHeader("Authorization") String authHeader) {
-        String token = extractToken(authHeader);
-        if (token == null) {
-            return ResponseEntity.badRequest().body(Map.of("valid", false, "error", "Invalid Authorization header"));
+    public ResponseEntity<String> validate(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+
+        if (blacklistService.isBlacklisted(token)) {
+            return ResponseEntity.status(401).body("Token is blacklisted!");
         }
 
-        if (!jwtUtil.validateToken(token) || blacklistService.isBlacklisted(token)) {
-            return ResponseEntity.ok(Map.of("valid", false));
+        if (jwtUtil.isTokenValid(token)) {
+            return ResponseEntity.ok("Token is valid!");
         }
 
-        return ResponseEntity.ok(Map.of("valid", true, "username", jwtUtil.extractUsername(token)));
-    }
-
-    private String extractToken(String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        return null;
+        return ResponseEntity.status(401).body("Token is invalid!");
     }
 }

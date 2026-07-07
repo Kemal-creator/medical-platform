@@ -44,6 +44,10 @@ public class JwtUtil {
         }
     }
 
+    public boolean isTokenValid(String token) {
+        return validateToken(token);
+    }
+
     public long getExpirationMillis(String token) {
         return parseClaims(token).getExpiration().getTime();
     }
