@@ -30,14 +30,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = extractToken(authHeader);
-        if (token == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid Authorization header"));
-        }
-
-        blacklistService.addToBlacklist(token, jwtUtil.getExpirationMillis(token));
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    public ResponseEntity<String> logout(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        blacklistService.addToBlacklist(token);
+        return ResponseEntity.ok("Logged out successfully");
     }
 
     @GetMapping("/validate")

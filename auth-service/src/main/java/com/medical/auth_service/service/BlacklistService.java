@@ -1,5 +1,6 @@
 package com.medical.auth_service.service;
 
+import com.medical.auth_service.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,9 +14,10 @@ public class BlacklistService {
     private static final String BLACKLIST_PREFIX = "blacklist:";
 
     private final StringRedisTemplate redisTemplate;
+    private final JwtUtil jwtUtil;
 
-    public void addToBlacklist(String token, long expirationMs) {
-        long ttlMs = expirationMs - System.currentTimeMillis();
+    public void addToBlacklist(String token) {
+        long ttlMs = jwtUtil.getExpirationMillis(token) - System.currentTimeMillis();
         if (ttlMs > 0) {
             redisTemplate.opsForValue()
                     .set(BLACKLIST_PREFIX + token, "true", Duration.ofMillis(ttlMs));
