@@ -36,7 +36,7 @@ public class AuthController {
         return ResponseEntity.ok("Logged out successfully");
     }
 
-    @GetMapping("/validate")
+    @PostMapping("/validate")
     public ResponseEntity<String> validate(@RequestBody Map<String, String> request) {
         String token = request.get("token");
 
